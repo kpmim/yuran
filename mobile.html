@@ -174,6 +174,59 @@ body.day-mint .av.f,body.day-sky .av.f,body.day-rose .av.f{background:linear-gra
 .mlist-row.fut .ml-st{color:var(--text3);}
 .ml-date{font-family:var(--mono);font-size:9px;color:var(--text2);margin-top:1px;}
 .ml-ico{font-size:13px;flex-shrink:0;width:18px;text-align:center;}
+
+/* ACCORDION MEMBER LIST */
+.acc-list{display:flex;flex-direction:column;border-radius:var(--r2);overflow:hidden;border:1px solid var(--border);}
+.acc-item{background:var(--bg3);border-bottom:1px solid var(--border);}
+.acc-item:last-child{border-bottom:none;}
+.acc-item.acc-open{background:var(--surface);}
+.acc-header{display:flex;align-items:center;gap:11px;padding:11px 13px;cursor:pointer;transition:background .15s;user-select:none;}
+.acc-header:hover{background:var(--surface);}
+.acc-av{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;overflow:hidden;background:#fff;}
+.acc-av img{width:100%;height:100%;object-fit:cover;object-position:center 15%;border-radius:10px;}
+.acc-info{flex:1;min-width:0;}
+.acc-name{font-size:13px;font-weight:700;letter-spacing:-.2px;}
+.acc-sub{font-size:10px;color:var(--text2);margin-top:2px;font-family:var(--mono);}
+.acc-mini-bar{height:3px;background:var(--bg2);border-radius:2px;margin-top:5px;overflow:hidden;}
+.acc-mini-bar-f{height:100%;border-radius:2px;background:linear-gradient(90deg,#ff6b6b,#4d6fff);transition:width .4s ease;}
+body.day-mint .acc-mini-bar-f,body.day-sky .acc-mini-bar-f,body.day-rose .acc-mini-bar-f{background:linear-gradient(90deg,#c0101f,#e02030);}
+.acc-badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 9px;border-radius:20px;flex-shrink:0;}
+.acc-badge.g{background:rgba(0,200,100,.12);color:#00c864;border:1px solid rgba(0,200,100,.25);}
+.acc-badge.w{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(245,200,66,.2);}
+.acc-badge.r{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.2);}
+.acc-chevron{font-size:13px;color:var(--text3);transition:transform .22s ease;flex-shrink:0;}
+.acc-item.acc-open .acc-chevron{transform:rotate(90deg);}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .32s cubic-bezier(.4,0,.2,1);}
+.acc-item.acc-open .acc-body{max-height:800px;}
+.acc-inner{padding:0 13px 13px 13px;}
+/* month rows inside accordion */
+.acc-mo-list{background:var(--bg2);border-radius:var(--r);overflow:hidden;border:1px solid var(--border);}
+.acc-mo-row{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid var(--border);transition:background .12s;}
+.acc-mo-row:last-child{border-bottom:none;}
+.acc-mo-row:hover{background:var(--surface);}
+.acc-mo-row.paid-r{background:rgba(0,200,100,.05);}
+.acc-mo-row.unpaid-r{background:rgba(255,59,48,.03);}
+.acc-mo-row.ram-r{background:rgba(249,115,22,.06);}
+.acc-mo-row.fut-r{opacity:.45;}
+.acc-mo-num{font-family:var(--mono);font-size:10px;color:var(--text3);width:16px;text-align:right;flex-shrink:0;}
+.acc-mo-name{font-size:12px;font-weight:600;width:32px;flex-shrink:0;}
+.acc-mo-row.paid-r .acc-mo-name{color:#00c864;}
+.acc-mo-row.unpaid-r .acc-mo-name{color:var(--red);}
+.acc-mo-row.ram-r .acc-mo-name{color:#f97316;}
+.acc-mo-row.fut-r .acc-mo-name{color:var(--text2);}
+.acc-mo-date{font-size:10px;font-family:var(--mono);color:var(--text2);flex:1;}
+.acc-mo-st{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.acc-mo-row.paid-r .acc-mo-st{background:rgba(0,200,100,.12);color:#00c864;border:1px solid rgba(0,200,100,.2);}
+.acc-mo-row.unpaid-r .acc-mo-st{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,77,109,.2);}
+.acc-mo-row.ram-r .acc-mo-st{background:rgba(249,115,22,.12);color:#f97316;border:1px solid rgba(249,115,22,.2);}
+.acc-mo-row.fut-r .acc-mo-st{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+.acc-mo-tog{width:26px;height:26px;border-radius:8px;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.acc-mo-tog.tog-on{background:rgba(0,200,100,.15);color:#00c864;}
+.acc-mo-tog.tog-off{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+.acc-mo-tog:hover{transform:scale(1.12);}
+.acc-goto{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:9px;padding:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);font-size:11px;color:var(--text2);cursor:pointer;transition:all .15s;}
+.acc-goto:hover{border-color:var(--border2);color:var(--text);}
+
 /* keep old mgrid for any other use */
 .mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
 .mcell{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:11px 8px;text-align:center;transition:all .18s;}
@@ -1019,25 +1072,64 @@ function renderAdmDash(){
     </div>`;
   }).join('');
 
+  // Track which accordion is open in dashboard
+  if(!S.accOpen) S.accOpen = null;
+
   const mrows=MEMBERS.map(m=>{
     const pc=paidCount(yr,m.id);
     const cls=pc>=10?'g':pc>=5?'w':'r';
     const p=Math.round(pc/12*100);
-    const paidMks=MK.filter(mk=>isPaid(yr,m.id,mk));
-    const chips=paidMks.slice(-4).map(mk=>{
+    const isOpen = S.accOpen === m.id;
+    const avHtml = PHOTOS[m.id]
+      ? `<div class="acc-av" onclick="event.stopPropagation();zoomPhoto('${m.id}','${m.name}')"><img src="${PHOTOS[m.id]}"></div>`
+      : `<div class="acc-av av ${m.gender}">${ini(m.name)}</div>`;
+
+    // Build month rows inline
+    const moRows = MK.map((mk,i)=>{
+      if(mk===RAMADAN_MK){
+        return `<div class="acc-mo-row ram-r">
+          <span class="acc-mo-num">${String(i+1).padStart(2,'0')}</span>
+          <span class="acc-mo-name">Mac</span>
+          <span class="acc-mo-date" style="color:#f97316;">Bulan Ramadan 🌙</span>
+          <span class="acc-mo-st">RAMADAN</span>
+        </div>`;
+      }
       const e=getEntry(yr,m.id,mk);
-      return `<span class="ph-chip">${MONTHS[MK.indexOf(mk)]}·${e.date}hb</span>`;
+      const paid=!!e;
+      const future=yr>=curYr&&mk>curMk;
+      const rowCls=paid?'paid-r':future?'fut-r':'unpaid-r';
+      const st=paid?'BAYAR ✓':future?'AKAN':'BELUM';
+      const dateStr=paid?`${e.date} ${MONTHS[i]} ${yr}`:future?'—':'Belum bayar';
+      const togCls=paid?'tog-on':'tog-off';
+      const togIco=paid?'✓':'○';
+      return `<div class="acc-mo-row ${rowCls}">
+        <span class="acc-mo-num">${String(i+1).padStart(2,'0')}</span>
+        <span class="acc-mo-name">${MONTHS[i]}</span>
+        <span class="acc-mo-date">${dateStr}</span>
+        <span class="acc-mo-st">${st}</span>
+        ${!future?`<button class="acc-mo-tog ${togCls}" onclick="event.stopPropagation();accQuickTog('${yr}','${m.id}','${mk}',${i})">${togIco}</button>`:'<span style="width:26px;"></span>'}
+      </div>`;
     }).join('');
-    return `<div class="mcard" onclick="selAdm('${m.id}')">
-      <div class="av ${m.gender}" style="overflow:hidden;padding:0;cursor:${PHOTOS[m.id]?'zoom-in':'default'};background:#fff;" onclick="event.stopPropagation();if(PHOTOS['${m.id}'])zoomPhoto('${m.id}','${m.name}');"> ${PHOTOS[m.id]?`<img src='${PHOTOS[m.id]}' style='width:100%;height:100%;object-fit:cover;object-position:center 15%;border-radius:13px;'>`:ini(m.name)}</div>
-      <div class="mi">
-        <div class="mn">${m.name}</div>
-        <div class="ms">${pc}/12 bulan dibayar</div>
-        ${chips?`<div class="pay-hist">${chips}</div>`:''}
-        <div class="mbar"><div class="mbar-f" style="width:${p}%"></div></div>
+
+    return `<div class="acc-item${isOpen?' acc-open':''}" id="acc_${m.id}">
+      <div class="acc-header" onclick="toggleAcc('${m.id}')">
+        ${avHtml}
+        <div class="acc-info">
+          <div class="acc-name">${m.name}</div>
+          <div class="acc-sub">${pc}/12 bulan dibayar</div>
+          <div class="acc-mini-bar"><div class="acc-mini-bar-f" style="width:${p}%"></div></div>
+        </div>
+        <div class="acc-badge ${cls}">${pc}/12</div>
+        <span class="acc-chevron">›</span>
       </div>
-      <div class="badge ${cls}">${pc}/12</div>
-      <span class="chv">›</span>
+      <div class="acc-body">
+        <div class="acc-inner">
+          <div class="acc-mo-list">${moRows}</div>
+          <div class="acc-goto" onclick="selAdm('${m.id}')">
+            ✎ Buka halaman detail penuh &nbsp;›
+          </div>
+        </div>
+      </div>
     </div>`;
   }).join('');
 
@@ -1055,7 +1147,7 @@ function renderAdmDash(){
       ${bars}
     </div>
     <div class="slbl">Senarai ahli</div>
-    <div class="mlist">${mrows}</div>`;
+    <div class="acc-list" id="accList">${mrows}</div>`;
 
   setTimeout(()=>{
     MK.forEach((mk,i)=>{
@@ -1064,6 +1156,30 @@ function renderAdmDash(){
       if(el)el.style.width=Math.round(cnt/MEMBERS.length*100)+'%';
     });
   },80);
+}
+
+function toggleAcc(id){
+  S.accOpen = S.accOpen===id ? null : id;
+  // Re-render just the acc-list without full dashboard refresh
+  renderAdmDash();
+  if(S.accOpen===id){
+    setTimeout(()=>{
+      const el=document.getElementById('acc_'+id);
+      if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },100);
+  }
+}
+
+function accQuickTog(yr,id,mk,idx){
+  if(isPaid(yr,id,mk)){
+    clearPaid(yr,id,mk);
+    notif(`${MONTHS[idx]} ${yr} — dinyahmarkkan`,'✕');
+  } else {
+    setPaid(yr,id,mk,25,'');
+    notif(`${MONTHS[idx]} ${yr} — 25hb (auto)`,'✓');
+    setTimeout(()=>openWa(id,yr,mk,idx),400);
+  }
+  renderAdmDash();
 }
 
 function swAdmYr(yr){S.admYear=yr;renderAdmDash();}
