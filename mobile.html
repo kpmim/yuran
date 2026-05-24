@@ -176,6 +176,34 @@ body.day-mint .av.f,body.day-sky .av.f,body.day-rose .av.f{background:linear-gra
 .ml-ico{font-size:13px;flex-shrink:0;width:18px;text-align:center;}
 
 /* ACCORDION MEMBER LIST */
+
+/* INLINE DETAIL PANEL (admin dashboard dropdown) */
+.idet-wrap{padding:0;}
+.idet-hero{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--border);}
+.idet-av{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.idet-list{display:flex;flex-direction:column;}
+.idet-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);transition:background .12s;}
+.idet-row:last-child{border-bottom:none;}
+.idet-row:hover{background:var(--surface);}
+.idet-row.paid{background:rgba(0,200,100,.04);}
+.idet-row.unpaid{background:rgba(255,59,48,.03);}
+.idet-row.ram{background:rgba(249,115,22,.05);}
+.idet-row.fut{opacity:.45;}
+.idet-num{font-family:var(--mono);font-size:10px;color:var(--text3);width:16px;text-align:right;flex-shrink:0;}
+.idet-mo{font-size:12px;font-weight:700;width:30px;flex-shrink:0;}
+.idet-row.paid .idet-mo{color:#00c864;}
+.idet-row.unpaid .idet-mo{color:var(--red);}
+.idet-row.fut .idet-mo{color:var(--text2);}
+.idet-info{flex:1;font-size:11px;color:var(--text2);font-family:var(--mono);}
+.idet-badge{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid transparent;white-space:nowrap;flex-shrink:0;}
+.idet-row.paid .idet-badge{background:rgba(0,200,100,.12);color:#00c864;border-color:rgba(0,200,100,.25);}
+.idet-row.unpaid .idet-badge{background:var(--red-dim);color:var(--red);border-color:rgba(255,77,109,.2);}
+.idet-row.fut .idet-badge{background:var(--bg2);color:var(--text3);border-color:var(--border);}
+.idet-tog{width:28px;height:28px;border-radius:8px;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.idet-tog.on{background:rgba(0,200,100,.15);color:#00c864;}
+.idet-tog.off{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+.idet-tog:hover{transform:scale(1.1);}
+
 .acc-list{display:flex;flex-direction:column;border-radius:var(--r2);overflow:hidden;border:1px solid var(--border);}
 .acc-item{background:var(--bg3);border-bottom:1px solid var(--border);}
 .acc-item:last-child{border-bottom:none;}
@@ -502,7 +530,7 @@ const INIT={
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz4w9Lan4oJ5d9ZB84ibGHNTfrmfV4c7BzTrLqqQR4Ur3QtRUk4Ci00lgXJkrypM3zd0Q/exec';
 const SYNC_ENABLED = SHEETS_URL !== 'PASTE_YOUR_WEB_APP_URL_HERE';
 
-const S={tab:'ahli',adminLoggedIn:false,ahliMember:null,ahliYear:'2026',admMember:null,admYear:'2026',openPanel:null,data:null,syncing:false};
+const S={tab:'ahli',adminLoggedIn:false,ahliMember:null,ahliYear:'2026',admMember:null,admYear:'2026',openPanel:null,data:null,syncing:false,admInlineId:null};
 
 // ── LOCKOUT SYSTEM ────────────────────────────────────────────
 const LOCK_MAX=4, LOCK_DURATION=5*60*1000; // 4 cubaan, 5 minit
@@ -1072,66 +1100,58 @@ function renderAdmDash(){
     </div>`;
   }).join('');
 
-  // Track which accordion is open in dashboard
-  if(!S.accOpen) S.accOpen = null;
+  // ── DROPDOWN SELECTOR + INLINE DETAIL ─────────────────────
+  // Dropdown to select member, then show their payment detail inline
+  const memberOptions = MEMBERS.map(m =>
+    `<option value="${m.id}"${S.admInlineId===m.id?' selected':''}>${m.name} — ${paidCount(yr,m.id)}/12 bulan</option>`
+  ).join('');
 
-  const mrows=MEMBERS.map(m=>{
-    const pc=paidCount(yr,m.id);
-    const cls=pc>=10?'g':pc>=5?'w':'r';
-    const p=Math.round(pc/12*100);
-    const isOpen = S.accOpen === m.id;
-    const avHtml = PHOTOS[m.id]
-      ? `<div class="acc-av" onclick="event.stopPropagation();zoomPhoto('${m.id}','${m.name}')"><img src="${PHOTOS[m.id]}"></div>`
-      : `<div class="acc-av av ${m.gender}">${ini(m.name)}</div>`;
+  // Build inline detail for selected member
+  let inlineDetail = '';
+  if(S.admInlineId){
+    const dm = MEMBERS.find(x=>x.id===S.admInlineId);
+    if(dm){
+      const dpc = paidCount(yr,dm.id);
+      const dp  = Math.round(dpc/12*100);
+      const moRows = MK.map((mk,i)=>{
+        if(mk===RAMADAN_MK) return `
+          <div class="idet-row ram">
+            <span class="idet-num">${String(i+1).padStart(2,'0')}</span>
+            <span class="idet-mo" style="color:#f97316;">Mac</span>
+            <span class="idet-info" style="color:#f97316;">Bulan Ramadan 🌙</span>
+            <span class="idet-badge" style="background:rgba(249,115,22,.12);color:#f97316;border-color:rgba(249,115,22,.25);">RAMADAN</span>
+          </div>`;
+        const e = getEntry(yr,dm.id,mk);
+        const paid = !!e;
+        const future = yr>=curYr && mk>curMk;
+        const rowCls = paid?'paid':future?'fut':'unpaid';
+        const st = paid?'BAYAR ✓':future?'AKAN':'BELUM';
+        const info = paid ? `${e.date} ${FULLMONTHS[i]} ${yr}${e.note?' · '+e.note:''}` : future?'Belum tiba':'Belum bayar';
+        return `
+          <div class="idet-row ${rowCls}">
+            <span class="idet-num">${String(i+1).padStart(2,'0')}</span>
+            <span class="idet-mo">${MONTHS[i]}</span>
+            <span class="idet-info">${info}</span>
+            <span class="idet-badge">${st}</span>
+            ${!future?`<button class="idet-tog ${paid?'on':'off'}" onclick="admInlineTog('${yr}','${dm.id}','${mk}',${i})">${paid?'✓':'○'}</button>`:''}
+          </div>`;
+      }).join('');
 
-    // Build month rows inline
-    const moRows = MK.map((mk,i)=>{
-      if(mk===RAMADAN_MK){
-        return `<div class="acc-mo-row ram-r">
-          <span class="acc-mo-num">${String(i+1).padStart(2,'0')}</span>
-          <span class="acc-mo-name">Mac</span>
-          <span class="acc-mo-date" style="color:#f97316;">Bulan Ramadan 🌙</span>
-          <span class="acc-mo-st">RAMADAN</span>
-        </div>`;
-      }
-      const e=getEntry(yr,m.id,mk);
-      const paid=!!e;
-      const future=yr>=curYr&&mk>curMk;
-      const rowCls=paid?'paid-r':future?'fut-r':'unpaid-r';
-      const st=paid?'BAYAR ✓':future?'AKAN':'BELUM';
-      const dateStr=paid?`${e.date} ${MONTHS[i]} ${yr}`:future?'—':'Belum bayar';
-      const togCls=paid?'tog-on':'tog-off';
-      const togIco=paid?'✓':'○';
-      return `<div class="acc-mo-row ${rowCls}">
-        <span class="acc-mo-num">${String(i+1).padStart(2,'0')}</span>
-        <span class="acc-mo-name">${MONTHS[i]}</span>
-        <span class="acc-mo-date">${dateStr}</span>
-        <span class="acc-mo-st">${st}</span>
-        ${!future?`<button class="acc-mo-tog ${togCls}" onclick="event.stopPropagation();accQuickTog('${yr}','${m.id}','${mk}',${i})">${togIco}</button>`:'<span style="width:26px;"></span>'}
-      </div>`;
-    }).join('');
-
-    return `<div class="acc-item${isOpen?' acc-open':''}" id="acc_${m.id}">
-      <div class="acc-header" onclick="toggleAcc('${m.id}')">
-        ${avHtml}
-        <div class="acc-info">
-          <div class="acc-name">${m.name}</div>
-          <div class="acc-sub">${pc}/12 bulan dibayar</div>
-          <div class="acc-mini-bar"><div class="acc-mini-bar-f" style="width:${p}%"></div></div>
-        </div>
-        <div class="acc-badge ${cls}">${pc}/12</div>
-        <span class="acc-chevron">›</span>
-      </div>
-      <div class="acc-body">
-        <div class="acc-inner">
-          <div class="acc-mo-list">${moRows}</div>
-          <div class="acc-goto" onclick="selAdm('${m.id}')">
-            ✎ Buka halaman detail penuh &nbsp;›
+      inlineDetail = `
+        <div class="idet-wrap">
+          <div class="idet-hero">
+            <div class="idet-av av ${dm.gender}" style="overflow:hidden;padding:0;background:#fff;">${PHOTOS[dm.id]?`<img src="${PHOTOS[dm.id]}" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;border-radius:12px;">`:ini(dm.name)}</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:700;">${dm.name}</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;font-family:var(--mono);">${dpc}/12 bulan dibayar &nbsp;·&nbsp; ${dp}%</div>
+              <div style="height:4px;background:var(--bg2);border-radius:2px;margin-top:7px;overflow:hidden;"><div style="height:100%;width:${dp}%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .5s ease;"></div></div>
+            </div>
+            <button onclick="selAdm('${dm.id}')" style="font-size:11px;padding:6px 11px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;white-space:nowrap;">Detail ›</button>
           </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+          <div class="idet-list">${moRows}</div>
+        </div>`;
+    }
+  }
 
   document.getElementById('adm-dash').innerHTML=`
     <div class="atop">
@@ -1146,8 +1166,18 @@ function renderAdmDash(){
       <div style="font-size:11px;color:var(--text2);font-weight:600;font-family:var(--mono);margin-bottom:12px;">BAYARAN MENGIKUT BULAN — ${yr}</div>
       ${bars}
     </div>
-    <div class="slbl">Senarai ahli</div>
-    <div class="acc-list" id="accList">${mrows}</div>`;
+    <div class="slbl">Semak Status Ahli</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;">
+      <div style="padding:12px 14px;border-bottom:${S.admInlineId?'1px solid var(--border)':'none'};">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:8px;">Pilih Ahli</label>
+        <select onchange="admSelectMember(this.value)"
+          style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--font);font-size:13px;padding:11px 14px;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22><path fill=%22%238b90c4%22 d=%22M6 8L1 3h10z%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;">
+          <option value="">— Pilih nama ahli —</option>
+          ${memberOptions}
+        </select>
+      </div>
+      ${inlineDetail}
+    </div>`;
 
   setTimeout(()=>{
     MK.forEach((mk,i)=>{
@@ -1158,19 +1188,18 @@ function renderAdmDash(){
   },80);
 }
 
-function toggleAcc(id){
-  S.accOpen = S.accOpen===id ? null : id;
-  // Re-render just the acc-list without full dashboard refresh
+function admSelectMember(id){
+  S.admInlineId = id || null;
   renderAdmDash();
-  if(S.accOpen===id){
+  if(id){
     setTimeout(()=>{
-      const el=document.getElementById('acc_'+id);
+      const el=document.querySelector('.idet-wrap');
       if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
-    },100);
+    },80);
   }
 }
 
-function accQuickTog(yr,id,mk,idx){
+function admInlineTog(yr,id,mk,idx){
   if(isPaid(yr,id,mk)){
     clearPaid(yr,id,mk);
     notif(`${MONTHS[idx]} ${yr} — dinyahmarkkan`,'✕');
