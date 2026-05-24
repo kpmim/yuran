@@ -355,7 +355,7 @@ body.day-mint .btnmain:hover,body.day-sky .btnmain:hover,body.day-rose .btnmain:
         </button>
         
       </div>
-      <span id="sync-status" style="font-size:9px;font-family:var(--mono);color:#ffc947;">⚠ Offline</span>
+      <span id="sync-status" style="font-size:9px;font-family:var(--mono);color:#4d9fff;">⬤ Connecting...</span>
     </div>
     </div>
   </div>
@@ -583,8 +583,10 @@ async function loadData(){
       if(!S._seeded){ S._seeded=true; seedPaid2026(); }
     }
   } catch(err){
-    showSyncStatus('⚠ Gagal sambung ke Sheets (guna cache)',false);
-    console.warn('Sheets sync error:',err);
+    // Silent fail — jangan tunjuk error kepada user, guna cache sahaja
+    const _se=document.getElementById('sync-status');
+    if(_se){_se.textContent='⬤ Offline (cache)';_se.style.color='#ffc947';}
+    console.warn('Sheets sync (silent):',err.message);
   } finally {
     S.syncing = false;
     // Allow countdown display to resume
@@ -736,6 +738,7 @@ function doAhliLogin(){
     lockState.attempts=0;lockState.lockedUntil=null;
     inp.style.borderColor='rgba(0,200,100,.5)';
     S.ahliMember=sel; S.ahliYear='2026';
+    if(typeof saveSession!=='undefined') saveSession();
     setTimeout(()=>{
       document.getElementById('ahli-list').style.display='none';
       renderAhliDetail();
@@ -897,6 +900,7 @@ function toggleAllRemind(){
 function swAhliYr(yr){S.ahliYear=yr;renderAhliDetail();}
 function backAhli(){
   S.ahliMember=null;
+  if(typeof saveSession!=='undefined') saveSession();
   document.getElementById('ahli-detail').style.display='none';
   document.getElementById('ahli-detail').innerHTML='';
   document.getElementById('ahli-list').style.display='block';
@@ -935,7 +939,9 @@ function doLogin(){
   if(!inp)return;
   if(inp.value.trim()===ADMIN_STAFF_NO){
     lockState.attempts=0;lockState.lockedUntil=null;
-    S.adminLoggedIn=true;renderAdmDash();
+    S.adminLoggedIn=true;
+    if(typeof saveSession!=='undefined') saveSession();
+    renderAdmDash();
   } else {
     inp.className='pin-inp err';
     inp.value='';
@@ -1285,7 +1291,7 @@ function doClear(yr,id,mk,idx){
 }
 function swAdmDYr(yr){S.admYear=yr;S.openPanel=null;renderAdmDetail();}
 function backAdm(){S.admMember=null;S.openPanel=null;renderAdmDash();}
-function doLogout(){S.adminLoggedIn=false;S.admMember=null;renderAdmin();}
+function doLogout(){S.adminLoggedIn=false;S.admMember=null;try{sessionStorage.removeItem('pq_session');}catch(e){}renderAdmin();}
 
 
 const THEME_LABELS={dark:'🌙 Dark',light:'☀️ Light'};
@@ -1427,8 +1433,8 @@ function _updateCd() {
   if(!el || S.syncing) return;
   // Jangan override msg kalau tengah syncing
   if(el.textContent.includes('⟳') || el.textContent.includes('✓')) return;
-  el.textContent = SYNC_ENABLED ? `⬤ Data Connected · refresh ${_cdLeft}s` : '⚠ Offline (tiada URL)';
-  el.style.color = SYNC_ENABLED ? '#00c864' : '#ffc947';
+  el.textContent = SYNC_ENABLED ? `⬤ Data Connected · refresh ${_cdLeft}s` : '⬤ Offline Mode';
+  el.style.color = SYNC_ENABLED ? '#00c864' : '#8b90c4';
 }
 
 startAutoRefresh();
@@ -1439,7 +1445,148 @@ startAutoRefresh();
 })();
 renderAhliList();
 renderAdmLogin();
+
+// ── RESTORE SESSION selepas refresh ──────────────────────────
+(function(){
+  try {
+    const sess = sessionStorage.getItem('pq_session');
+    if(sess){
+      const sd = JSON.parse(sess);
+      if(sd.tab) S.tab = sd.tab;
+      if(sd.ahliMember){ S.ahliMember = sd.ahliMember; S.ahliYear = sd.ahliYear||'2026'; }
+      if(sd.adminLoggedIn){ S.adminLoggedIn = true; S.admYear = sd.admYear||'2026'; }
+      // Apply tab
+      ['ahli','admin'].forEach(x=>{
+        document.getElementById('t-'+x).className='tab'+(S.tab===x?' on':'');
+        document.getElementById('scr-'+x).className='scr'+(S.tab===x?' on':'');
+      });
+      // Render correct view
+      if(S.tab==='admin'){
+        if(S.adminLoggedIn) renderAdmDash();
+      } else {
+        if(S.ahliMember){
+          document.getElementById('ahli-list').style.display='none';
+          renderAhliDetail();
+          document.getElementById('ahli-detail').style.display='block';
+        }
+      }
+    }
+  } catch(e){}
+})();
+
+// ── SAVE SESSION on change ────────────────────────────────────
+function saveSession(){
+  try {
+    sessionStorage.setItem('pq_session', JSON.stringify({
+      tab: S.tab,
+      ahliMember: S.ahliMember,
+      ahliYear: S.ahliYear,
+      adminLoggedIn: S.adminLoggedIn,
+      admYear: S.admYear
+    }));
+  } catch(e){}
+}
+// Patch swTab, doAhliLogin, doLogin, doLogout, backAhli, backAdm, doIdleLogout to call saveSession
+const _origSwTab = swTab;
+window.swTab = function(t){ _origSwTab(t); saveSession(); };
+
 loadData(); // fetch realtime dari Sheets terus waktu load
+
+// ── IDLE TIMEOUT — 2 minit tak aktif → noti + auto logout ────
+const IDLE_SEC = 120; // 2 minit
+const IDLE_WARN_SEC = 20; // bagi amaran 20s sebelum logout
+let _idleTimer = null, _idleWarnTimer = null, _idleCd = null;
+let _idleModalShown = false;
+
+function resetIdle(){
+  clearTimeout(_idleTimer);
+  clearTimeout(_idleWarnTimer);
+  clearInterval(_idleCd);
+  if(_idleModalShown) hideIdleModal();
+  _idleTimer = setTimeout(showIdleWarn, (IDLE_SEC - IDLE_WARN_SEC) * 1000);
+}
+
+function showIdleWarn(){
+  // Only show if user is logged in (ahli or admin)
+  if(!S.ahliMember && !S.adminLoggedIn) { resetIdle(); return; }
+  _idleModalShown = true;
+  let sec = IDLE_WARN_SEC;
+  // Insert modal
+  let modal = document.getElementById('idleModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'idleModal';
+    document.body.appendChild(modal);
+  }
+  function renderModal(){
+    modal.innerHTML = `
+      <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;">
+        <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:28px 24px;max-width:300px;width:88%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);">
+          <div style="font-size:36px;margin-bottom:10px;">😴</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text);">Sesi Tidak Aktif</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5;">
+            Anda tidak aktif. Log keluar automatik dalam<br>
+            <span id="idleCdNum" style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);display:inline-block;margin-top:6px;">${sec}s</span>
+          </div>
+          <button onclick="cancelIdle()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;">
+            ✋ Saya Masih Di Sini
+          </button>
+        </div>
+      </div>`;
+  }
+  renderModal();
+  _idleCd = setInterval(()=>{
+    sec--;
+    const el = document.getElementById('idleCdNum');
+    if(el) el.textContent = sec + 's';
+    if(sec <= 0){
+      clearInterval(_idleCd);
+      doIdleLogout();
+    }
+  }, 1000);
+}
+
+function hideIdleModal(){
+  _idleModalShown = false;
+  const m = document.getElementById('idleModal');
+  if(m) m.innerHTML = '';
+}
+
+function cancelIdle(){
+  clearInterval(_idleCd);
+  hideIdleModal();
+  resetIdle();
+  notif('Sesi disambung semula','✓');
+}
+
+function doIdleLogout(){
+  hideIdleModal();
+  clearTimeout(_idleTimer);
+  clearInterval(_idleCd);
+  // Logout ahli
+  if(S.ahliMember){
+    S.ahliMember = null;
+    document.getElementById('ahli-detail').style.display='none';
+    document.getElementById('ahli-detail').innerHTML='';
+    document.getElementById('ahli-list').style.display='block';
+    renderAhliList();
+  }
+  // Logout admin
+  if(S.adminLoggedIn){
+    S.adminLoggedIn = false;
+    S.admMember = null;
+    renderAdmin();
+  }
+  // Clear session so refresh doesn't restore logged-in state
+  try { sessionStorage.removeItem('pq_session'); } catch(e){}
+  notif('Log keluar automatik — sesi tamat','🔒');
+}
+
+// Track aktiviti pengguna
+['click','touchstart','keydown','scroll','mousemove'].forEach(evt=>{
+  document.addEventListener(evt, resetIdle, {passive:true});
+});
+resetIdle(); // start idle timer
 </script>
 </body>
 </html>
