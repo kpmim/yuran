@@ -973,14 +973,39 @@ function renderAdmDash(){
       border:1px solid ${isCur?'var(--accent2)':'rgba(255,107,107,0.3)'};
       margin:2px;">${mName}${isCur?' ← KINI':''}</span>`;
   }).join('');
+  // Senarai ahli belum bayar untuk bulan SEMASA sahaja
+  const unpaidThisMonth = MEMBERS.filter(m => !isPaid(yr,m.id,curMk) && curMk!==RAMADAN_MK);
+  const unpaidNamesHtml = unpaidThisMonth.map(m => {
+    const initials = ini(m.name);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <div style="width:28px;height:28px;border-radius:8px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;">${initials}</div>
+      <span style="font-size:12px;font-weight:600;flex:1;">${m.name}</span>
+      <span style="font-size:9px;font-family:var(--mono);color:var(--red);background:var(--red-dim);padding:2px 7px;border-radius:20px;border:1px solid rgba(255,77,109,.2);">BELUM</span>
+    </div>`;
+  }).join('');
+
   const reminderBannerHtml = unpaidMonthsList.length>0
-    ? `<div style="background:var(--accent-dim);border:1px solid rgba(255,107,107,0.3);border-radius:var(--r);padding:13px 15px;margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px;">🔔 Peringatan — Bulan ${curMonthName.toUpperCase()} ${curYr}</div>
+    ? `<div style="background:var(--accent-dim);border:1px solid rgba(255,107,107,0.3);border-radius:var(--r);padding:14px 15px;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:5px;">🔔 Peringatan — Bulan ${curMonthName.toUpperCase()} ${curYr}</div>
         <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Bulan-bulan berikut masih ada ahli belum bayar:</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">${reminderTagsHtml}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${unpaidThisMonth.length>0?'12':'0'}px;">${reminderTagsHtml}</div>
+        ${unpaidThisMonth.length>0 ? `
+        <div style="margin-top:2px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;">Belum Bayar — ${curMonthName} ${curYr} (${unpaidThisMonth.length} orang)</div>
+          <div style="background:var(--bg3);border-radius:var(--r);padding:4px 10px;margin-bottom:10px;">
+            ${unpaidNamesHtml}
+          </div>
+          <div style="background:rgba(255,201,71,0.1);border:1px solid rgba(255,201,71,0.3);border-radius:var(--r);padding:10px 12px;display:flex;align-items:flex-start;gap:9px;">
+            <span style="font-size:18px;flex-shrink:0;">💬</span>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:3px;">Ada yang dah bayar tapi lupa update?</div>
+              <div style="font-size:11px;color:var(--text2);line-height:1.5;">Semak mesej WhatsApp — mungkin ada yang dah hantar bukti bayaran tapi belum dikemaskini dalam sistem.</div>
+            </div>
+          </div>
+        </div>` : ''}
       </div>`
     : `<div style="background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.3);border-radius:var(--r);padding:11px 15px;margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:700;color:#00c864;">✅ Semua Kemas — Tiada Tunggakan</div>
+        <div style="font-size:11px;font-weight:700;color:#00c864;">✅ Semua Kemas — Tiada Tunggakan Bulan Ini</div>
       </div>`;
 
   const bars=MK.map((mk,i)=>{
